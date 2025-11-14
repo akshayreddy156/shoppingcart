@@ -1,5 +1,13 @@
-import React from "react";
-import { Grid, Typography, Button, Box, IconButton, Icon } from "@mui/material";
+import React, { useEffect } from "react";
+import {
+  Grid,
+  Typography,
+  Button,
+  Box,
+  IconButton,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 import { mode, product } from "../types/product";
 import AddIcon from "@mui/icons-material/Add";
 import CrudItems from "./crudItems.tsx";
@@ -29,6 +37,8 @@ export default function Shopping({
   const [selectedProduct, setSelectedProduct] = React.useState<product | null>(
     null
   );
+  const [snackOpen, setSnackOpen] = React.useState(false);
+
   const [dialogKey, setDialogKey] = React.useState(0);
 
   const handleOpen = (p?: product, m?: mode) => {
@@ -52,6 +62,24 @@ export default function Shopping({
     deleteItem(p);
     handleDeleteClose();
   };
+
+  useEffect(() => {
+    const outOfStockItem = products.find((p) => p.stock === 0);
+    if (outOfStockItem) {
+      setSnackOpen(true);
+    }
+  }, [products]);
+
+  const handleSnackClose = (
+    event?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackOpen(false);
+  };
+
   return (
     <>
       {products.length === 0 ? (
@@ -209,6 +237,26 @@ export default function Shopping({
         product={selectedProduct || undefined}
         key={dialogKey}
       />
+      <Snackbar
+        open={snackOpen}
+        autoHideDuration={4000}
+        onClose={handleSnackClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          severity="error"
+          onClose={handleSnackClose}
+          sx={{
+            bgcolor: "red",
+            color: "white",
+            "& .MuiAlert-icon": {
+              color: "white",
+            },
+          }}
+        >
+          Some items are out of stock!
+        </Alert>
+      </Snackbar>
     </>
   );
 }
