@@ -66,13 +66,28 @@ function App() {
     setProductList((prev) => [...prev, newProduct]);
   };
 
+  const handleEditProduct = (updatedProduct: product) => {
+    setProductList((prev) =>
+      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+    );
+  };
+
+  const handleDeleteProduct = (deletedProduct: product) => {
+    setProductList((prev) => [
+      ...prev.filter((p) => p.id !== deletedProduct.id),
+    ]);
+  };
+
   return (
     <div>
       <Navbar onAdd={handleAddProduct} />
       <Shopping
+        onAdd={handleAddProduct}
         products={productList}
         addToCart={addtoCart}
         removeFromCart={removeFromCart}
+        deleteItem={handleDeleteProduct}
+        onEdit={handleEditProduct}
       />
       <Cart products={productList} handleReset={handleReset} />
     </div>

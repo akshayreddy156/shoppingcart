@@ -1,100 +1,214 @@
-import { Grid, Typography, Button } from "@mui/material";
-import { product } from "../types/product";
+import React from "react";
+import { Grid, Typography, Button, Box, IconButton, Icon } from "@mui/material";
+import { mode, product } from "../types/product";
 import AddIcon from "@mui/icons-material/Add";
+import CrudItems from "./crudItems.tsx";
 import RemoveIcon from "@mui/icons-material/Remove";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteItem from "./deleteItem.tsx";
+import EditIcon from "@mui/icons-material/Edit";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 export default function Shopping({
   products,
   addToCart,
   removeFromCart,
+  deleteItem,
+  onAdd,
+  onEdit,
 }: {
   products: product[];
+  onAdd?: (p: product) => void;
+  onEdit?: (p: product) => void;
   addToCart: (product: product) => void;
   removeFromCart: (product: product) => void;
+  deleteItem: (product: product) => void;
 }) {
+  const [mode, setMode] = React.useState<mode | "view">("view");
+  const [openAdd, setOpenAdd] = React.useState(false);
+  const [openDelete, setOpenDelete] = React.useState(false);
+  const [selectedProduct, setSelectedProduct] = React.useState<product | null>(
+    null
+  );
+  const [dialogKey, setDialogKey] = React.useState(0);
+
+  const handleOpen = (p?: product, m?: mode) => {
+    setDialogKey((prevKey) => prevKey + 1);
+    setSelectedProduct(p || null);
+    setOpenAdd(true);
+    setMode(m || "add");
+  };
+
+  const handleDeleteOpen = (p: product) => {
+    setDialogKey((prevKey) => prevKey + 1);
+    setSelectedProduct(p);
+    setOpenDelete(true);
+  };
+  const handleDeleteClose = () => {
+    setOpenDelete(false);
+    setSelectedProduct(null);
+  };
+
+  const handleConfirmDelete = (p: product) => {
+    deleteItem(p);
+    handleDeleteClose();
+  };
   return (
     <>
-      <Typography variant="h3" component="h1" align="center" sx={{ mt: 3 }}>
-        Welcome to the Shopping Page!
-      </Typography>
-      <Grid container spacing={2} sx={{ mt: 2, px: 2 }}>
-        {/* Headings row */}
-        <Grid size={12}>
-          <Grid container spacing={2} sx={{ alignItems: "center", mb: 1 }}>
-            <Grid size={3}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Name
-              </Typography>
-            </Grid>
-            <Grid size={3}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Price
-              </Typography>
-            </Grid>
-            <Grid size={3}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Stock
-              </Typography>
-            </Grid>
-            <Grid size={2}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Actions
-              </Typography>
-            </Grid>
-            <Grid size={1}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Amount
-              </Typography>
-            </Grid>
-          </Grid>
-        </Grid>
-
-        {products.map((product) => (
-          <Grid size={12} key={product.id} sx={{ mb: 2 }}>
-            <Grid container spacing={2} sx={{ alignItems: "center" }}>
-              {/* Name - 3 grids */}
-              <Grid size={3}>
-                <Typography variant="h6">{product.name}</Typography>
-              </Grid>
-              {/* Price - 3 grids */}
-              <Grid size={3}>
-                <Typography variant="h6">${product.price}</Typography>
-              </Grid>
-              <Grid size={3}>
-                <Typography variant="h6">{product.stock}</Typography>
-              </Grid>
-              {/* Buttons - 2 grids */}
-              <Grid
-                size={2}
-                sx={{
-                  display: "flex",
-                  gap: 1,
-                  justifyContent: "flex-start",
-                  ml: -4,
-                }}
-              >
-                <Button color="primary" onClick={() => addToCart(product)}>
-                  <AddIcon fontSize="small" />
-                </Button>
-                <Typography variant="body1" sx={{ alignSelf: "center" }}>
-                  {product.quantity}
+      {products.length === 0 ? (
+        <Box
+          sx={{
+            minHeight: "70vh",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Typography variant="h3" component="h1" align="center" sx={{ mb: 3 }}>
+            Welcome to the Shopping Page!
+          </Typography>
+          <Button
+            variant="contained"
+            color="success"
+            sx={{ minWidth: 220, py: 2 }}
+            onClick={() => {
+              handleOpen(undefined, "add");
+            }}
+          >
+            Add your first Item
+          </Button>
+          <CrudItems
+            mode={mode}
+            open={openAdd}
+            onEdit={onEdit}
+            onClose={() => setOpenAdd(false)}
+            onAdd={onAdd}
+            key={dialogKey}
+          />
+        </Box>
+      ) : (
+        <Grid container spacing={2} sx={{ mt: 2, px: 2 }}>
+          {/* Headings row */}
+          <Grid size={12}>
+            <Grid container spacing={2} sx={{ alignItems: "center", mb: 1 }}>
+              <Grid size={2}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Name
                 </Typography>
-                <Button
-                  aria-label="reduce"
-                  color="error"
-                  onClick={() => removeFromCart(product)}
-                >
-                  <RemoveIcon fontSize="small" />
-                </Button>
+              </Grid>
+              <Grid size={2}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Price
+                </Typography>
               </Grid>
               <Grid size={1}>
-                <Typography variant="body1" sx={{ alignSelf: "center", ml: 4 }}>
-                  ${product.quantity * product.price}
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Stock
+                </Typography>
+              </Grid>
+              <Grid size={2}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: 600, alignSelf: "center" }}
+                >
+                  Cart
+                </Typography>
+              </Grid>
+              <Grid size={2}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Amount
+                </Typography>
+              </Grid>
+              <Grid size={3}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Actions
                 </Typography>
               </Grid>
             </Grid>
           </Grid>
-        ))}
-      </Grid>
+
+          {products.map((product) => (
+            <Grid size={12} key={product.id} sx={{ mb: 2 }}>
+              <Grid container spacing={2} sx={{ alignItems: "center" }}>
+                <Grid size={2}>
+                  <Typography variant="h6">{product.name}</Typography>
+                </Grid>
+                <Grid size={2}>
+                  <Typography variant="h6">${product.price}</Typography>
+                </Grid>
+                <Grid size={1}>
+                  <Typography variant="h6">{product.stock}</Typography>
+                </Grid>
+                <Grid
+                  size={2}
+                  sx={{
+                    display: "flex",
+                    ml: -1,
+                    gap: 1,
+                  }}
+                >
+                  <IconButton
+                    onClick={() => addToCart(product)}
+                    color="success"
+                  >
+                    <AddIcon fontSize="small" />
+                  </IconButton>
+                  <Typography variant="body1" sx={{ alignSelf: "center" }}>
+                    {product.quantity}
+                  </Typography>
+                  <IconButton
+                    color="error"
+                    onClick={() => removeFromCart(product)}
+                  >
+                    <RemoveIcon fontSize="small" />
+                  </IconButton>
+                </Grid>
+                <Grid size={2}>
+                  <Typography
+                    variant="body1"
+                    sx={{ alignSelf: "center", ml: 3 }}
+                  >
+                    {(product.quantity * product.price).toFixed(2)}
+                  </Typography>
+                </Grid>
+                <Grid size={2} sx={{ display: "flex", gap: 1 }}>
+                  <IconButton onClick={() => handleOpen(product, "view")}>
+                    <VisibilityIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleOpen(product, "edit")}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleDeleteOpen(product)}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Grid>
+              </Grid>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+      <DeleteItem
+        open={openDelete}
+        onClose={handleDeleteClose}
+        deleteItem={handleConfirmDelete}
+        product={selectedProduct}
+        key={dialogKey}
+      />
+      <CrudItems
+        mode={mode}
+        open={openAdd}
+        onEdit={onEdit}
+        onClose={() => setOpenAdd(false)}
+        onAdd={onAdd}
+        product={selectedProduct || undefined}
+        key={dialogKey}
+      />
     </>
   );
 }

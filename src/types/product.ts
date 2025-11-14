@@ -6,3 +6,4 @@ export type product = {
   quantity: number;
   stock: number;
 };
+export type mode = "add" | "view" | "edit";

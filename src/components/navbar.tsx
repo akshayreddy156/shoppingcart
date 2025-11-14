@@ -1,7 +1,7 @@
 import React from "react";
 import { AppBar, Button } from "@mui/material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import AddItem from "./addItem.tsx";
+import CrudItems from "./crudItems.tsx";
 import { product } from "../types/product";
 import LowPriorityIcon from "@mui/icons-material/LowPriority";
 export default function Navbar({ onAdd }: { onAdd?: (p: product) => void }) {
@@ -34,7 +34,8 @@ export default function Navbar({ onAdd }: { onAdd?: (p: product) => void }) {
         </Button>
       </AppBar>
 
-      <AddItem
+      <CrudItems
+        mode="add"
         open={openAdd}
         onClose={() => setOpenAdd(false)}
         onAdd={onAdd}

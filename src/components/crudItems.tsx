@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -9,23 +9,56 @@ import {
   IconButton,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { product } from "../types/product";
+import { mode, product } from "../types/product";
 
 type Props = {
+  mode: mode;
   open: boolean;
   onClose: () => void;
   onAdd?: (p: product) => void;
+  onEdit?: (p: product) => void;
+  product?: product;
 };
 
-export default function AddItem({ open, onClose, onAdd }: Props) {
+export default function CrudItems({
+  open,
+  onClose,
+  onAdd,
+  onEdit,
+  mode,
+  product,
+}: Props) {
   const [name, setName] = useState("");
   const [price, setPrice] = useState(0);
   const [stock, setStock] = useState(0);
+  const [description, setDescription] = useState("");
+  const [readOnly, setReadOnly] = useState(false);
   const [errors, setErrors] = useState({
     name: "",
     price: "",
     stock: "",
   });
+  useEffect(() => {
+    if (product && (mode === "edit" || mode === "view")) {
+      setName(product.name);
+      setPrice(product.price);
+      setStock(product.stock);
+      setDescription(product.description || "");
+    } else {
+      // Reset fields for add mode
+      setName("");
+      setPrice(0);
+      setStock(0);
+      setDescription("");
+    }
+  }, [product, mode]);
+  useEffect(() => {
+    if (mode === "view") {
+      setReadOnly(true);
+    } else {
+      setReadOnly(false);
+    }
+  }, [mode]);
 
   const validate = () => {
     const newErrors = { name: "", price: "", stock: "" };
@@ -42,12 +75,37 @@ export default function AddItem({ open, onClose, onAdd }: Props) {
     }
 
     if (Number(stock) <= 0 || !Number.isInteger(Number(stock))) {
-      newErrors.stock = "Stock cannot be negative or non-integer";
+      newErrors.stock = "Stock cannot be 0 or non-integer";
       isValid = false;
     }
 
     setErrors(newErrors);
     return isValid;
+  };
+
+  function handleSubmit() {
+    if (mode === "add") {
+      handleAdd();
+    } else if (mode === "edit") {
+      handleEdit();
+    } else {
+      onClose();
+    }
+  }
+
+  const handleEdit = () => {
+    if (!validate()) return;
+    // Implement edit functionality here
+    const updatedProduct: product = {
+      id: product ? product.id : Date.now(),
+      name: name || "Untitled",
+      price: price || 0,
+      description: description || "",
+      quantity: product?.quantity || 0,
+      stock: stock || 0,
+    };
+    if (onEdit) onEdit(updatedProduct);
+    onClose();
   };
 
   const handleAdd = () => {
@@ -62,7 +120,6 @@ export default function AddItem({ open, onClose, onAdd }: Props) {
       stock: Number(stock) || 0,
     };
     if (onAdd) onAdd(newProduct);
-    // reset and close
     setName("");
     setPrice(0);
     setStock(0);
@@ -72,7 +129,9 @@ export default function AddItem({ open, onClose, onAdd }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ pt: 3, fontWeight: "bold" }}>Add New Item</DialogTitle>
+      <DialogTitle sx={{ pt: 3, fontWeight: "bold" }}>
+        {mode === "edit" ? "Edit" : mode === "view" ? "View" : "Add New"} Item
+      </DialogTitle>
       <IconButton
         aria-label="close"
         onClick={onClose}
@@ -92,8 +151,29 @@ export default function AddItem({ open, onClose, onAdd }: Props) {
           margin="normal"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          slotProps={{ inputLabel: { shrink: true } }}
+          slotProps={{
+            inputLabel: { shrink: true },
+            input: {
+              readOnly: readOnly,
+            },
+          }}
           required
+          error={!!errors.name}
+          helperText={errors.name}
+        />
+        <TextField
+          label="Description"
+          variant="outlined"
+          fullWidth
+          margin="normal"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          slotProps={{
+            inputLabel: { shrink: true },
+            input: {
+              readOnly: readOnly,
+            },
+          }}
           error={!!errors.name}
           helperText={errors.name}
         />
@@ -109,6 +189,9 @@ export default function AddItem({ open, onClose, onAdd }: Props) {
           helperText={errors.price}
           slotProps={{
             htmlInput: { min: 0, step: "any" },
+            input: {
+              readOnly: readOnly,
+            },
           }}
         />
         <TextField
@@ -123,14 +206,19 @@ export default function AddItem({ open, onClose, onAdd }: Props) {
           helperText={errors.stock}
           slotProps={{
             htmlInput: { min: 0, step: 1 },
+            input: {
+              readOnly: readOnly,
+            },
           }}
         />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleAdd}>
-          Add
-        </Button>
+        {mode === "view" ? null : (
+          <Button variant="contained" onClick={handleSubmit}>
+            {mode === "edit" ? "Update" : "Add"}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
