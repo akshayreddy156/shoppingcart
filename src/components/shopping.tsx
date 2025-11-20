@@ -7,6 +7,7 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import { mode, product } from "../types/product";
 import AddIcon from "@mui/icons-material/Add";
@@ -23,13 +24,17 @@ export default function Shopping({
   deleteItem,
   onAdd,
   onEdit,
+  loading,
+  error,
 }: {
   products: product[];
-  onAdd?: (p: product) => void;
+  onAdd?: (p: Omit<product, "id">) => void;
   onEdit?: (p: product) => void;
   addToCart: (product: product) => void;
   removeFromCart: (product: product) => void;
   deleteItem: (product: product) => void;
+  loading?: boolean;
+  error?: string | null;
 }) {
   const [mode, setMode] = React.useState<mode | "view">("view");
   const [openAdd, setOpenAdd] = React.useState(false);
@@ -38,18 +43,16 @@ export default function Shopping({
     null
   );
   const [snackOpen, setSnackOpen] = React.useState(false);
-
-  const [dialogKey, setDialogKey] = React.useState(0);
+  const [errorSnackOpen, setErrorSnackOpen] = React.useState(false);
+  const [outOfStockProduct, setOutOfStockProduct] = React.useState<product | null>(null);
 
   const handleOpen = (p?: product, m?: mode) => {
-    setDialogKey((prevKey) => prevKey + 1);
     setSelectedProduct(p || null);
     setOpenAdd(true);
     setMode(m || "add");
   };
 
   const handleDeleteOpen = (p: product) => {
-    setDialogKey((prevKey) => prevKey + 1);
     setSelectedProduct(p);
     setOpenDelete(true);
   };
@@ -66,9 +69,16 @@ export default function Shopping({
   useEffect(() => {
     const outOfStockItem = products.find((p) => p.stock === 0);
     if (outOfStockItem) {
+      setOutOfStockProduct(outOfStockItem);
       setSnackOpen(true);
     }
   }, [products]);
+
+  useEffect(() => {
+    if (error) {
+      setErrorSnackOpen(true);
+    }
+  }, [error]);
 
   const handleSnackClose = (
     event?: React.SyntheticEvent | Event,
@@ -80,9 +90,30 @@ export default function Shopping({
     setSnackOpen(false);
   };
 
+  const handleErrorSnackClose = (
+    event?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setErrorSnackOpen(false);
+  };
+
   return (
     <>
-      {products.length === 0 ? (
+      {loading ? (
+        <Box
+          sx={{
+            minHeight: "70vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <CircularProgress size={60} />
+        </Box>
+      ) : products.length === 0 ? (
         <Box
           sx={{
             minHeight: "70vh",
@@ -105,14 +136,6 @@ export default function Shopping({
           >
             Add your first Item
           </Button>
-          <CrudItems
-            mode={mode}
-            open={openAdd}
-            onEdit={onEdit}
-            onClose={() => setOpenAdd(false)}
-            onAdd={onAdd}
-            key={dialogKey}
-          />
         </Box>
       ) : (
         <Grid container spacing={2} sx={{ mt: 2, px: 2 }}>
@@ -178,6 +201,7 @@ export default function Shopping({
                   <IconButton
                     onClick={() => addToCart(product)}
                     color="success"
+                    disabled={product.stock === 0}
                   >
                     <AddIcon fontSize="small" />
                   </IconButton>
@@ -187,6 +211,7 @@ export default function Shopping({
                   <IconButton
                     color="error"
                     onClick={() => removeFromCart(product)}
+                    disabled={product.quantity === 0}
                   >
                     <RemoveIcon fontSize="small" />
                   </IconButton>
@@ -226,7 +251,6 @@ export default function Shopping({
         onClose={handleDeleteClose}
         deleteItem={handleConfirmDelete}
         product={selectedProduct}
-        key={dialogKey}
       />
       <CrudItems
         mode={mode}
@@ -235,11 +259,10 @@ export default function Shopping({
         onClose={() => setOpenAdd(false)}
         onAdd={onAdd}
         product={selectedProduct || undefined}
-        key={dialogKey}
       />
       <Snackbar
         open={snackOpen}
-        autoHideDuration={4000}
+        autoHideDuration={1000}
         onClose={handleSnackClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
@@ -254,7 +277,21 @@ export default function Shopping({
             },
           }}
         >
-          Some items are out of stock!
+          {outOfStockProduct?.name || "Some items"} is out of stock!
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={errorSnackOpen}
+        autoHideDuration={6000}
+        onClose={handleErrorSnackClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          severity="error"
+          onClose={handleErrorSnackClose}
+          sx={{ width: "100%" }}
+        >
+          {error || "An error occurred"}
         </Alert>
       </Snackbar>
     </>

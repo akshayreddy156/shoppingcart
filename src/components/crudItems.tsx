@@ -15,7 +15,7 @@ type Props = {
   mode: mode;
   open: boolean;
   onClose: () => void;
-  onAdd?: (p: product) => void;
+  onAdd?: (p: Omit<product, 'id'>) => void;
   onEdit?: (p: product) => void;
   product?: product;
 };
@@ -111,11 +111,10 @@ export default function CrudItems({
   const handleAdd = () => {
     if (!validate()) return;
 
-    const newProduct: product = {
-      id: Date.now(),
+    const newProduct: Omit<product, 'id'> = {
       name: name || "Untitled",
       price: Number(price) || 0,
-      description: "",
+      description: description || "",
       quantity: 0,
       stock: Number(stock) || 0,
     };
@@ -123,6 +122,7 @@ export default function CrudItems({
     setName("");
     setPrice(0);
     setStock(0);
+    setDescription("");
     setErrors({ name: "", price: "", stock: "" });
     onClose();
   };

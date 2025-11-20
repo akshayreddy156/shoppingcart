@@ -4,12 +4,10 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import CrudItems from "./crudItems.tsx";
 import { product } from "../types/product";
 import LowPriorityIcon from "@mui/icons-material/LowPriority";
-export default function Navbar({ onAdd }: { onAdd?: (p: product) => void }) {
+export default function Navbar({ onAdd }: { onAdd?: (p: Omit<product, 'id'>) => void }) {
   const [openAdd, setOpenAdd] = React.useState(false);
-  const [dialogKey, setDialogKey] = React.useState(0);
 
   const handleOpen = () => {
-    setDialogKey((prevKey) => prevKey + 1);
     setOpenAdd(true);
   };
   return (
@@ -39,7 +37,6 @@ export default function Navbar({ onAdd }: { onAdd?: (p: product) => void }) {
         open={openAdd}
         onClose={() => setOpenAdd(false)}
         onAdd={onAdd}
-        key={dialogKey}
       />
     </>
   );

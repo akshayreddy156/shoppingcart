@@ -4,78 +4,106 @@ import Navbar from "./components/navbar.tsx";
 import Shopping from "./components/shopping.tsx";
 import { product } from "./types/product";
 import Cart from "./components/cart.tsx";
+import productService from "./services/productService.ts";
 
 function App() {
-  let products: product[] = [
-    {
-      id: 1,
-      name: "Laptop",
-      price: 999.99,
-      description: "A high-performance laptop",
-      stock: 10,
-      quantity: 0,
-    },
-    {
-      id: 2,
-      name: "Smartphone",
-      price: 499.99,
-      description: "A latest model smartphone",
-      quantity: 0,
-      stock: 15,
-    },
-  ];
-  const [productList, setProductList] = React.useState<product[]>(products);
-  const addtoCart = (product: product) => {
-    const updatedProducts = productList.map((p) => {
-      if (p.id === product.id && p.stock > 0) {
-        return {
-          ...p,
-          quantity: p.quantity + 1,
-          stock: p.stock - 1,
-        };
+  const [productList, setProductList] = React.useState<product[]>([]);
+  const [loading, setLoading] = React.useState<boolean>(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // Fetch products from backend on component mount
+  React.useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const products = await productService.getAllProducts();
+        setProductList(products);
+      } catch (err: any) {
+        console.error("Failed to fetch products:", err);
+        setError(
+          err.response?.data?.message ||
+            "Failed to load products. Please check if the backend is running."
+        );
+      } finally {
+        setLoading(false);
       }
-      return p;
-    });
-    setProductList(updatedProducts);
+    };
+
+    fetchProducts();
+  }, []);
+  const addtoCart = async (product: product) => {
+    try {
+      const updatedProduct = await productService.addToCart(product.id);
+      setProductList((prev) =>
+        prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+      );
+    } catch (err: any) {
+      console.error("Failed to add to cart:", err);
+      setError(err.response?.data?.message || "Failed to add item to cart");
+    }
   };
 
-  const removeFromCart = (product: product) => {
-    const updatedProducts = productList.map((p) => {
-      if (p.id === product.id && p.quantity > 0) {
-        return {
-          ...p,
-          quantity: p.quantity - 1,
-          stock: p.stock + 1,
-        };
-      }
-      return p;
-    });
-    setProductList(updatedProducts);
+  const removeFromCart = async (product: product) => {
+    try {
+      const updatedProduct = await productService.removeFromCart(product.id);
+      setProductList((prev) =>
+        prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+      );
+    } catch (err: any) {
+      console.error("Failed to remove from cart:", err);
+      setError(
+        err.response?.data?.message || "Failed to remove item from cart"
+      );
+    }
   };
 
-  const handleReset = () => {
-    const resetProducts = productList.map((p) => ({
-      ...p,
-      stock: p.stock + p.quantity,
-      quantity: 0,
-    }));
-    setProductList(resetProducts);
+  const handleReset = async () => {
+    try {
+      const resetProducts = await productService.resetCart();
+      setProductList(resetProducts);
+    } catch (err: any) {
+      console.error("Failed to reset cart:", err);
+      setError(err.response?.data?.message || "Failed to reset cart");
+    }
   };
 
-  const handleAddProduct = (newProduct: product) => {
-    setProductList((prev) => [...prev, newProduct]);
+  const handleAddProduct = async (newProduct: Omit<product, "id">) => {
+    try {
+      const createdProduct = await productService.createProduct(newProduct);
+      setProductList((prev) => [...prev, createdProduct]);
+    } catch (err: any) {
+      console.error("Failed to add product:", err);
+      setError(err.response?.data?.message || "Failed to add product");
+      throw err; // Re-throw to let the component handle it
+    }
   };
 
-  const handleEditProduct = (updatedProduct: product) => {
-    setProductList((prev) =>
-      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
-    );
+  const handleEditProduct = async (updatedProduct: product) => {
+    try {
+      const updated = await productService.updateProduct(
+        updatedProduct.id,
+        updatedProduct
+      );
+      setProductList((prev) =>
+        prev.map((p) => (p.id === updated.id ? updated : p))
+      );
+    } catch (err: any) {
+      console.error("Failed to update product:", err);
+      setError(err.response?.data?.message || "Failed to update product");
+      throw err; // Re-throw to let the component handle it
+    }
   };
 
-  const handleDeleteProduct = (deletedProduct: product) => {
-    setProductList((prev) => [
-      ...prev.filter((p) => p.id !== deletedProduct.id),
-    ]);
+  const handleDeleteProduct = async (deletedProduct: product) => {
+    try {
+      await productService.deleteProduct(deletedProduct.id);
+      setProductList((prev) => prev.filter((p) => p.id !== deletedProduct.id));
+    } catch (err: any) {
+      console.error("Failed to delete product:", err);
+      setError(err.response?.data?.message || "Failed to delete product");
+      throw err; // Re-throw to let the component handle it
+    }
   };
 
   return (
@@ -88,6 +116,8 @@ function App() {
         removeFromCart={removeFromCart}
         deleteItem={handleDeleteProduct}
         onEdit={handleEditProduct}
+        loading={loading}
+        error={error}
       />
       <Cart products={productList} handleReset={handleReset} />
     </div>
